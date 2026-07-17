@@ -1,0 +1,128 @@
+CREATE DATABASE  auto_repair_shop;
+USE auto_repair_shop;
+
+-- 1. Customer Table
+CREATE TABLE customer (
+    customer_id INT AUTO_INCREMENT PRIMARY KEY,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    phone VARCHAR(20) UNIQUE NOT NULL,
+    email VARCHAR(100) UNIQUE,
+    address TEXT,
+    city VARCHAR(50),
+    state VARCHAR(50),
+    zip_code VARCHAR(10),
+    registration_date DATE DEFAULT (CURRENT_DATE)
+);
+
+-- 2. Workshop Table
+CREATE TABLE workshop (
+    workshop_id INT AUTO_INCREMENT PRIMARY KEY,
+    workshop_name VARCHAR(100) NOT NULL,
+    location VARCHAR(255),
+    contact_number VARCHAR(20),
+    manager_name VARCHAR(100),
+    capacity INT DEFAULT 10,
+    opening_hours VARCHAR(100),
+    status ENUM('Active', 'Inactive', 'Maintenance') DEFAULT 'Active'
+);
+
+-- 3. Vehicle Table
+CREATE TABLE vehicle (
+    vehicle_id INT AUTO_INCREMENT PRIMARY KEY,
+    customer_id INT,
+    workshop_id INT,
+    make VARCHAR(50) NOT NULL,
+    model VARCHAR(50) NOT NULL,
+    year YEAR NOT NULL,
+    license_plate VARCHAR(20) UNIQUE NOT NULL,
+    vin VARCHAR(50) UNIQUE,
+    color VARCHAR(30),
+    mileage INT DEFAULT 0,
+    vehicle_type VARCHAR(50),
+    registration_date DATE DEFAULT (CURRENT_DATE),
+    FOREIGN KEY (customer_id) REFERENCES customer(customer_id) ON DELETE CASCADE,
+    FOREIGN KEY (workshop_id) REFERENCES workshop(workshop_id) ON DELETE SET NULL
+);
+
+-- 4. Mechanic Table
+CREATE TABLE mechanic (
+    mechanic_id INT AUTO_INCREMENT PRIMARY KEY,
+    workshop_id INT,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    specialization VARCHAR(100),
+    certification_level VARCHAR(50),
+    phone VARCHAR(20) UNIQUE,
+    email VARCHAR(100) UNIQUE,
+    hire_date DATE,
+    hourly_rate DECIMAL(10,2),
+    status ENUM('Active', 'On Leave', 'Terminated') DEFAULT 'Active',
+    FOREIGN KEY (workshop_id) REFERENCES workshop(workshop_id) ON DELETE SET NULL
+);
+
+-- 5. Service Record Table
+CREATE TABLE service_record (
+    service_id INT AUTO_INCREMENT PRIMARY KEY,
+    vehicle_id INT,
+    mechanic_id INT,
+    service_date DATE NOT NULL,
+    service_type VARCHAR(100) NOT NULL,
+    description TEXT,
+    labor_hours DECIMAL(5,2),
+    status ENUM('Pending', 'In Progress', 'Completed', 'Cancelled') DEFAULT 'Pending',
+    priority ENUM('Low', 'Medium', 'High', 'Urgent') DEFAULT 'Medium',
+    notes TEXT,
+    completion_date DATE,
+    FOREIGN KEY (vehicle_id) REFERENCES vehicle(vehicle_id) ON DELETE CASCADE,
+    FOREIGN KEY (mechanic_id) REFERENCES mechanic(mechanic_id) ON DELETE SET NULL
+);
+
+-- 6. Part Table
+CREATE TABLE part (
+    part_id INT AUTO_INCREMENT PRIMARY KEY,
+    service_id INT,
+    part_name VARCHAR(100) NOT NULL,
+    manufacturer VARCHAR(100),
+    part_number VARCHAR(50) UNIQUE,
+    quantity INT NOT NULL,
+    unit_price DECIMAL(10,2) NOT NULL,
+    supplier VARCHAR(100),
+    warranty_period VARCHAR(50),
+    installation_date DATE,
+    FOREIGN KEY (service_id) REFERENCES service_record(service_id) ON DELETE CASCADE
+);
+
+-- 7. Payment Table
+CREATE TABLE payment (
+    payment_id INT AUTO_INCREMENT PRIMARY KEY,
+    service_id INT,
+    customer_id INT,
+    amount DECIMAL(10,2) NOT NULL,
+    payment_date DATE NOT NULL,
+    payment_method ENUM('Cash', 'Credit Card', 'Debit Card', 'Check', 'Bank Transfer') NOT NULL,
+    payment_status ENUM('Paid', 'Pending', 'Partial', 'Refunded') DEFAULT 'Pending',
+    transaction_id VARCHAR(100) UNIQUE,
+    due_date DATE,
+    discount DECIMAL(10,2) DEFAULT 0.00,
+    tax DECIMAL(10,2) DEFAULT 0.00,
+    total_amount DECIMAL(10,2),
+    notes TEXT,
+    FOREIGN KEY (service_id) REFERENCES service_record(service_id) ON DELETE CASCADE,
+    FOREIGN KEY (customer_id) REFERENCES customer(customer_id) ON DELETE CASCADE
+);
+
+-- Insert sample data for testing
+INSERT INTO customer (first_name, last_name, phone, email, address, city, state, zip_code) VALUES
+('John', 'Doe', '555-0101', 'john.doe@email.com', '123 Main St', 'New York', 'NY', '10001'),
+('Jane', 'Smith', '555-0102', 'jane.smith@email.com', '456 Oak Ave', 'Los Angeles', 'CA', '90001'),
+('Robert', 'Johnson', '555-0103', 'robert.j@email.com', '789 Pine Rd', 'Chicago', 'IL', '60601');
+
+INSERT INTO workshop (workshop_name, location, contact_number, manager_name, capacity) VALUES
+('Main Garage', '101 Auto Center Dr', '555-1000', 'Mike Wilson', 15),
+('Downtown Service', '250 City Blvd', '555-1001', 'Sarah Brown', 10);
+
+INSERT INTO mechanic (workshop_id, first_name, last_name, specialization, phone, email, hire_date, hourly_rate) VALUES
+(1, 'Tom', 'Anderson', 'Engine Specialist', '555-2001', 'tom.a@shop.com', '2020-03-15', 45.00),
+(1, 'Chris', 'Martinez', 'Transmission Expert', '555-2002', 'chris.m@shop.com', '2021-06-01', 50.00),
+(2, 'David', 'Lee', 'Electrical Systems', '555-2003', 'david.l@shop.com', '2022-01-10', 40.00);
